@@ -19,6 +19,9 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+
+  final picker = ImagePicker();
+
   String firstButtonText = 'Take photo';
   String secondButtonText = 'Record video';
 
@@ -37,8 +40,10 @@ class _MyAppState extends State<MyApp> {
                 flex: 1,
                 child: Container(
                   child: SizedBox.expand(
-                    child: RaisedButton(
-                      color: Colors.blue,
+                    child: ElevatedButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(Colors.blue),
+                      ),
                       onPressed: _takePhoto,
                       child: Text(firstButtonText,
                           style: TextStyle(
@@ -50,15 +55,18 @@ class _MyAppState extends State<MyApp> {
               ScreenshotWidget(),
               Flexible(
                 child: Container(
-                    child: SizedBox.expand(
-                  child: RaisedButton(
-                    color: Colors.white,
-                    onPressed: _recordVideo,
-                    child: Text(secondButtonText,
-                        style: TextStyle(
-                            fontSize: textSize, color: Colors.blueGrey)),
-                  ),
-                )),
+                  child: SizedBox.expand(
+                    child: ElevatedButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
+                      ),
+                      onPressed: _recordVideo,
+                      child: Text(secondButtonText,
+                          style: TextStyle(
+                              fontSize: textSize, color: Colors.blueGrey)),
+                    ),
+                  )
+                ),
                 flex: 1,
               )
             ],
@@ -69,37 +77,33 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _takePhoto() async {
-    ImagePicker.pickImage(source: ImageSource.camera)
-        .then((File recordedImage) {
-      if (recordedImage != null && recordedImage.path != null) {
+    final pickedFile = await picker.getImage(source: ImageSource.camera);
+    if (pickedFile?.path != null) {
         setState(() {
           firstButtonText = 'saving in progress...';
         });
-        GallerySaver.saveImage(recordedImage.path, albumName: albumName)
+        GallerySaver.saveImage(pickedFile!.path, albumName: albumName)
             .then((bool success) {
           setState(() {
             firstButtonText = 'image saved!';
           });
         });
       }
-    });
   }
 
   void _recordVideo() async {
-    ImagePicker.pickVideo(source: ImageSource.camera)
-        .then((File recordedVideo) {
-      if (recordedVideo != null && recordedVideo.path != null) {
+    final pickedFile = await picker.getVideo(source: ImageSource.camera);
+    if (pickedFile?.path != null) {
         setState(() {
           secondButtonText = 'saving in progress...';
         });
-        GallerySaver.saveVideo(recordedVideo.path, albumName: albumName)
+        GallerySaver.saveVideo(pickedFile!.path, albumName: albumName)
             .then((bool success) {
           setState(() {
             secondButtonText = 'video saved!';
           });
         });
       }
-    });
   }
 
   // ignore: unused_element
@@ -142,8 +146,10 @@ class _ScreenshotWidgetState extends State<ScreenshotWidget> {
         key: _globalKey,
         child: Container(
           child: SizedBox.expand(
-            child: RaisedButton(
-              color: Colors.pink,
+            child: ElevatedButton(
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.pink),
+              ),
               onPressed: _saveScreenshot,
               child: Text(screenshotButtonText,
                   style: TextStyle(fontSize: textSize, color: Colors.white)),
@@ -160,11 +166,19 @@ class _ScreenshotWidgetState extends State<ScreenshotWidget> {
     });
     try {
       //extract bytes
-      final RenderRepaintBoundary boundary =
-          _globalKey.currentContext.findRenderObject();
-      final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
-      final ByteData byteData =
+      final RenderObject? boundary =
+          _globalKey.currentContext?.findRenderObject();
+      if(boundary == null) {
+        return;
+      }
+      final safeBoundary = boundary as RenderRepaintBoundary;
+      final ui.Image image = await safeBoundary.toImage(pixelRatio: 3.0);
+      final ByteData? byteData =
           await image.toByteData(format: ui.ImageByteFormat.png);
+
+      if(byteData == null) {
+        return;
+      }
       final Uint8List pngBytes = byteData.buffer.asUint8List();
 
       //create file

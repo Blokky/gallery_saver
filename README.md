@@ -53,7 +53,7 @@ class _MyAppState extends State<MyApp> {
               flex: 1,
               child: Container(
                 child: SizedBox.expand(
-                  child: RaisedButton(
+                  child: ElevatedButton(
                     color: Colors.blue,
                     onPressed: _takePhoto,
                     child: Text(firstButtonText,
@@ -66,7 +66,7 @@ class _MyAppState extends State<MyApp> {
             Flexible(
               child: Container(
                   child: SizedBox.expand(
-                child: RaisedButton(
+                child: ElevatedButton(
                   color: Colors.white,
                   onPressed: _recordVideo,
                   child: Text(secondButtonText,
